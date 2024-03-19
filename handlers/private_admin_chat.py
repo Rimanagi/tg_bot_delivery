@@ -76,7 +76,6 @@ async def cancel_handler(message: types.Message, state: FSMContext) -> None:
 @admin_router.message(StateFilter('*'), Command("назад"))
 @admin_router.message(StateFilter('*'), F.text.casefold() == "назад")
 async def back_step_handler(message: types.Message, state: FSMContext) -> None:
-
     current_state = await state.get_state()
 
     if current_state == AddProduct.name:
@@ -84,6 +83,7 @@ async def back_step_handler(message: types.Message, state: FSMContext) -> None:
         return
 
     previous = None
+
     for step in AddProduct.__all_states__:
         if step.state == current_state:
             await state.set_state(previous)
@@ -99,12 +99,12 @@ async def add_name(message: types.Message, state: FSMContext):
     await state.set_state(AddProduct.description)
 
 
-@admin_router.message(AddProduct.name,)
-async def add_name(message: types.Message, state: FSMContext):
+@admin_router.message(AddProduct.name, )
+async def add_name(message: types.Message, ):
     await message.answer("Вы ввели неверный формат данных, введите название товара")
 
 
-@admin_router.message(AddProduct.description,F.text)
+@admin_router.message(AddProduct.description, F.text)
 async def add_description(message: types.Message, state: FSMContext):
     await state.update_data(description=message.text)
     await message.answer("Введите стоимость товара")
