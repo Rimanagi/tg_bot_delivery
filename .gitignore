@@ -1,0 +1,4 @@
+.env
+handlers/__pycache__/
+keyboard_buttons/__pycache__/
+filters/__pycache__/
