@@ -3,9 +3,13 @@ from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 
+from sqlalchemy.ext.asyncio import AsyncSession
+
 from filters.chat_types import ChatTypeFilter, IsAdmin
 from keyboard_buttons.reply import get_keyboard
 
+
+from database.models import Product
 admin_router = Router()
 admin_router.message.filter(ChatTypeFilter(["private"]), IsAdmin())
 
@@ -24,18 +28,18 @@ async def add_product(message: types.Message):
     await message.answer("Что хотите сделать?", reply_markup=ADMIN_KB)
 
 
-@admin_router.message(F.text == "Я так, просто посмотреть зашел")
+@admin_router.message(F.text.casefold() == "Я так, просто посмотреть зашел")
 async def starring_at_product(message: types.Message):
     await message.answer("ОК, вот список товаров")
 
 
-@admin_router.message(F.text == "Изменить товар")
+@admin_router.message(F.text.casefold() == "Изменить товар")
 async def change_product(message: types.Message):
     await message.answer("ОК, вот список товаров")
 
 
-@admin_router.message(F.text == "Удалить товар")
-async def delete_product(message: types.Message):
+@admin_router.message(F.text.casefold() == "Удалить товар")
+async def delete_product(message: types.Message, counter):
     await message.answer("Выберите товар(ы) для удаления")
 
 
@@ -119,9 +123,19 @@ async def add_price(message: types.Message, state: FSMContext):
 
 
 @admin_router.message(AddProduct.image, F.photo)
-async def add_image(message: types.Message, state: FSMContext):
+async def add_image(message: types.Message, state: FSMContext, session: AsyncSession):
     await state.update_data(image=message.photo[-1].file_id)
     await message.answer("Товар добавлен", reply_markup=ADMIN_KB)
     data = await state.get_data()
-    await message.answer(str(data))
+
+
+    obj = Product(
+        name=data['name'],
+        description=data['description'],
+        price=float(data['price']),
+        image=data['image'],
+    )
+
+    session.add(obj)
+    await session.commit()  # commit in db
     await state.clear()

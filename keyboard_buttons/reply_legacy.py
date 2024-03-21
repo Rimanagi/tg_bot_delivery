@@ -1,5 +1,5 @@
 from aiogram.types import ReplyKeyboardMarkup, KeyboardButton, ReplyKeyboardRemove
-from aiogram.utils.keyboard import ReplyKeyboardBuilder  #второй вариант создания клавиатуры
+from aiogram.utils.keyboard import ReplyKeyboardBuilder  # второй вариант создания клавиатуры
 
 keyboards = ReplyKeyboardMarkup(
     keyboard=[
