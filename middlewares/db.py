@@ -1,4 +1,4 @@
-from typing import Callable, Dict, Any, Awaitable
+from typing import Any, Awaitable, Callable, Dict
 
 from aiogram import BaseMiddleware
 from aiogram.types import Message, TelegramObject
@@ -7,9 +7,9 @@ from sqlalchemy.ext.asyncio import async_sessionmaker
 
 
 class DataBaseSession(BaseMiddleware):
-
     def __init__(self, session_pool: async_sessionmaker):
         self.session_pool = session_pool
+
 
     async def __call__(
         self,
@@ -25,12 +25,12 @@ class DataBaseSession(BaseMiddleware):
 # class CounterMiddleware(BaseMiddleware):
 #     def __init__(self) -> None:
 #         self.counter = 0
-#
+
 #     async def __call__(
-#             self,
-#             handler: Callable[[Message, Dict[str, Any]], Awaitable[Any]],
-#             event: Message,
-#             data: Dict[str, Any]
+#         self,
+#         handler: Callable[[TelegramObject, Dict[str, Any]], Awaitable[Any]],
+#         event: TelegramObject,
+#         data: Dict[str, Any]
 #     ) -> Any:
 #         self.counter += 1
 #         data['counter'] = self.counter

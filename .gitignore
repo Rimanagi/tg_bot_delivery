@@ -3,6 +3,6 @@ handlers/__pycache__/
 keyboard_buttons/__pycache__/
 filters/__pycache__/
 database/__pycache__/
-middleware/__pycache__/
-
+middlewares/__pycache__/
+__pycache__/
 .idea

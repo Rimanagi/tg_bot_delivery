@@ -1,40 +1,97 @@
-from aiogram import types, Router
-from aiogram import F  # фильтрация типов сообщений
-from aiogram.filters import CommandStart, Command, or_f  # or_f - для нескольких условий хендлера
-from filters.chat_types import ChatTypeFilter  # фильтрация по типу чата
-from keyboard_buttons.reply_legacy import keyboards, deleting_keyboard, keyboards2, keyboards3
-from aiogram.enums import ParseMode
+from aiogram import F, types, Router
+from aiogram.filters import CommandStart, Command, or_f
+from aiogram.utils.formatting import (
+    as_list,
+    as_marked_section,
+    Bold,
+)
+from sqlalchemy.ext.asyncio import AsyncSession
+from database.orm_query import orm_get_products  # Italic, as_numbered_list и тд
 
+from filters.chat_types import ChatTypeFilter
+
+from keyboard_buttons.reply import get_keyboard
 
 user_private_router = Router()
-user_private_router.message.filter(ChatTypeFilter(['private']))
+user_private_router.message.filter(ChatTypeFilter(["private"]))
 
 
 @user_private_router.message(CommandStart())
-async def command_start(message: types.Message) -> None:
-    await message.answer('selam', reply_markup=keyboards3.as_markup(
-        resize_keyboard=True,
-        input_field_placeholder='Что Вас интересует?'
-    ))
-
-
-@user_private_router.message(or_f(Command('about'), F.text.lower() == 'about'))
-async def command_about(message: types.Message) -> None:
+async def start_cmd(message: types.Message):
     await message.answer(
-        'На случай если кто-то захочет протестировать бота:\n'
-        'Вы получите ответ как только местный разработчик-enjoyer его запустит у себя на машине\n\n'
-        'Идите занимайтесь своими делами, я тут учусь))))))')
+        "Привет, я виртуальный помощник",
+        reply_markup=get_keyboard(
+            "Меню",
+            "О магазине",
+            "Варианты оплаты",
+            "Варианты доставки",
+            placeholder="Что вас интересует?",
+            sizes=(2, 2)
+        ),
+    )
 
 
-@user_private_router.message(or_f(Command('menu'), F.text.lower() == 'меню',F.text.lower() == 'menu'))
-async def command_about(message: types.Message) -> None:
-    await message.answer('<b>Menu is here:\n'
-                         '(Here supposed to bo a menu)\n'
-                         'deleting keyboards</b>',
-                         reply_markup=deleting_keyboard,
-                         parse_mode=ParseMode.HTML)
+# @user_private_router.message(F.text.lower() == "меню")
+@user_private_router.message(or_f(Command("menu"), (F.text.lower() == "меню")))
+async def menu_cmd(message: types.Message, session: AsyncSession):
+    for product in await orm_get_products(session):
+        await message.answer_photo(
+            product.image,
+            caption=f"<strong>{product.name}\
+                    </strong>\n{product.description}\nСтоимость: {round(product.price, 2)}",
+        )
+    await message.answer("Вот меню:")
 
 
-@user_private_router.message(F.text)
-async def echo(message: types.Message) -> None:
-    await message.answer('Privat user chat')
+@user_private_router.message(F.text.lower() == "о магазине")
+@user_private_router.message(Command("about"))
+async def about_cmd(message: types.Message):
+    await message.answer("О нас:")
+
+
+@user_private_router.message(F.text.lower() == "варианты оплаты")
+@user_private_router.message(Command("payment"))
+async def payment_cmd(message: types.Message):
+    text = as_marked_section(
+        Bold("Варианты оплаты:"),
+        "Картой в боте",
+        "При получении карта/кеш",
+        "В заведении",
+        marker="✅ ",
+    )
+    await message.answer(text.as_html())
+
+
+@user_private_router.message(
+    (F.text.lower().contains("доставк")) | (F.text.lower() == "варианты доставки"))
+@user_private_router.message(Command("shipping"))
+async def shipping_cmd(message: types.Message):
+    text = as_list(
+        as_marked_section(
+            Bold("Варианты доставки/заказа:"),
+            "Курьер",
+            "Самовынос (сейчас прибегу заберу)",
+            "Покушаю у Вас (сейчас прибегу)",
+            marker="✅ ",
+        ),
+        as_marked_section(
+            Bold("Нельзя:"),
+            "Почта",
+            "Голуби",
+            marker="❌ "
+        ),
+        sep="\n----------------------\n",
+    )
+    await message.answer(text.as_html())
+
+
+# @user_private_router.message(F.contact)
+# async def get_contact(message: types.Message):
+#     await message.answer(f"номер получен")
+#     await message.answer(str(message.contact))
+
+
+# @user_private_router.message(F.location)
+# async def get_location(message: types.Message):
+#     await message.answer(f"локация получена")
+#     await message.answer(str(message.location))
